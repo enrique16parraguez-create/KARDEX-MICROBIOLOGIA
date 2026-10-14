@@ -1,0 +1,643 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Kardex Salidas Microbiología</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one working sheet — header band, semáforo summary strip, then the full-width entry grid (scrolls sideways inside its own frame). */
+:root{
+  --bg:#dff0ee; --bg-2:#e8eefa; --surface:#ffffff; --surface-2:#eef6f5; --line:#c9dbdc; --band:#0f5c6e; --band-2:#1f7a6d; --band-ink:#ffffff; --band-muted:#cde7ea;
+  --xls:#1d7a45; --pdf:#b8372b; --fg:#16232b; --muted:#5b6b75;
+  --accent:#0f5c6e; --accent-ink:#ffffff; --accent-soft:#dcecef;
+  --ok:#1f8a4c; --ok-soft:#e1f3e8; --warn:#c08a00; --warn-soft:#fbf1d4; --bad:#c23a2b; --bad-soft:#f9e1de;
+  --code-bg:#ffffff;
+  --f-display:"Barlow Semi Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0d1a1d; --bg-2:#111a26; --band:#123f4a; --band-2:#14463f; --band-ink:#eaf6f7; --band-muted:#9cc7cd; --xls:#3fae6c; --pdf:#e0675a; --surface:#162026; --surface-2:#1c2830; --line:#2b3a43; --fg:#e4ecef; --muted:#93a5ae;
+  --accent:#5fb3c4; --accent-ink:#0b1a1f; --accent-soft:#1d3a42;
+  --ok:#4cc27c; --ok-soft:#173726; --warn:#e7b43c; --warn-soft:#3a2f13; --bad:#ec6a5a; --bad-soft:#3d1c18;
+  --code-bg:#ffffff; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0d1a1d; --bg-2:#111a26; --band:#123f4a; --band-2:#14463f; --band-ink:#eaf6f7; --band-muted:#9cc7cd; --xls:#3fae6c; --pdf:#e0675a; --surface:#162026; --surface-2:#1c2830; --line:#2b3a43; --fg:#e4ecef; --muted:#93a5ae;
+  --accent:#5fb3c4; --accent-ink:#0b1a1f; --accent-soft:#1d3a42;
+  --ok:#4cc27c; --ok-soft:#173726; --warn:#e7b43c; --warn-soft:#3a2f13; --bad:#ec6a5a; --bad-soft:#3d1c18;
+  --code-bg:#ffffff; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:14px;line-height:1.45}
+.wrap{padding-inline:16px;padding-block:18px 40px;max-width:1600px;margin:0 auto;display:grid;gap:16px}
+header.top{display:flex;flex-wrap:wrap;gap:12px 24px;align-items:flex-end;justify-content:space-between;border-bottom:2px solid var(--fg);padding-bottom:12px}
+.eyebrow{font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+h1{font-family:var(--f-display);font-weight:700;font-size:clamp(22px,3vw,32px);line-height:1.1;margin:2px 0 4px;text-wrap:balance;text-transform:uppercase;letter-spacing:.01em}
+.sub{color:var(--muted);margin:0}
+.sub b{color:var(--fg);font-weight:600}
+.docmeta{font-family:var(--f-mono);font-size:12px;color:var(--muted);display:grid;gap:2px;text-align:right}
+.conn{display:inline-flex;align-items:center;gap:6px}
+.conn i{width:8px;height:8px;border-radius:50%;background:var(--warn);display:inline-block}
+.conn.on i{background:var(--ok)} .conn.off i{background:var(--bad)}
+
+.strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:10px 12px;display:grid;gap:2px;cursor:pointer;text-align:left;font:inherit;color:inherit}
+.kpi:hover{border-color:var(--accent)}
+.kpi[aria-pressed="true"]{outline:2px solid var(--accent);outline-offset:-1px}
+.kpi .lbl{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.kpi .val{font-family:var(--f-display);font-size:28px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.1}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex:none}
+.dot.ok{background:var(--ok)} .dot.warn{background:var(--warn)} .dot.bad{background:var(--bad)} .dot.none{background:var(--line)}
+
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.tab{font:600 14px var(--f-body);background:none;border:0;border-bottom:3px solid transparent;color:var(--muted);padding:8px 12px;cursor:pointer}
+.tab[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--accent)}
+
+.toolbar{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:end}
+.field{display:grid;gap:3px}
+.field label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+input,select,textarea{font:inherit;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:4px;padding:6px 8px;min-width:0}
+input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid var(--accent);outline-offset:0;border-color:var(--accent)}
+.btn{font:500 13px var(--f-body);border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:4px;padding:7px 12px;cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.ghost{border-color:transparent;background:none;color:var(--muted);padding:4px 6px}
+.btn.ghost:hover{color:var(--bad)}
+.spacer{flex:1}
+
+.sheet{background:var(--surface);border:1px solid var(--line);border-radius:6px;overflow-x:auto;max-height:72vh;overflow-y:auto}
+table{border-collapse:collapse;width:100%;min-width:1380px}
+thead th{position:sticky;top:0;z-index:2;background:var(--surface-2);font:600 11px var(--f-body);text-transform:uppercase;letter-spacing:.06em;color:var(--muted);text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);white-space:nowrap}
+tbody td{border-bottom:1px solid var(--line);padding:4px 6px;vertical-align:middle}
+tbody tr{border-left:4px solid transparent}
+tbody tr.s-ok{border-left-color:var(--ok)}
+tbody tr.s-warn{border-left-color:var(--warn)}
+tbody tr.s-bad{border-left-color:var(--bad);background:var(--bad-soft)}
+tbody tr.blank td{opacity:.75}
+tbody tr.blank:focus-within td{opacity:1}
+td input,td select{width:100%;border-color:transparent;background:transparent;padding:5px 6px}
+td input:hover,td select:hover{border-color:var(--line)}
+tbody tr:hover{background:var(--surface-2)}
+tbody tr.s-bad:hover{background:var(--bad-soft)}
+.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums;color:var(--muted);text-align:right;width:40px}
+.sap{font-family:var(--f-mono);font-size:13px;white-space:nowrap}
+.sap.missing{color:var(--bad);font-family:var(--f-body);font-size:12px}
+.c-st{width:34px;text-align:center}
+.c-desc{min-width:380px}
+.c-sap{width:110px}
+.c-lote{width:120px} .c-lote input{font-family:var(--f-mono)}
+.c-cant{width:70px} .c-cant input{text-align:right;font-variant-numeric:tabular-nums}
+.c-fecha{width:140px}
+.c-per{width:230px}
+.c-bc{width:190px}
+.c-obs{min-width:200px}
+.c-act{width:44px;text-align:center}
+.bc{display:inline-flex;background:var(--code-bg);border-radius:3px;padding:2px 4px;cursor:zoom-in;border:1px solid var(--line)}
+.bc svg{display:block;height:44px;width:auto;max-width:180px}
+.bc-wait{font-size:12px;color:var(--muted)}
+.hint{font-size:12px;color:var(--muted)}
+.empty{padding:22px;text-align:center;color:var(--muted)}
+
+.legend{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:12px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+
+.prod-table{min-width:760px}
+.prod-table td{padding:7px 8px}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500;padding:2px 9px;border-radius:999px;white-space:nowrap}
+.pill.ok{background:var(--ok-soft);color:var(--ok)} .pill.warn{background:var(--warn-soft);color:var(--warn)} .pill.bad{background:var(--bad-soft);color:var(--bad)} .pill.none{background:var(--surface-2);color:var(--muted)}
+.qty{font-family:var(--f-display);font-size:18px;font-weight:600;font-variant-numeric:tabular-nums;text-align:right}
+
+.modal{position:fixed;inset:0;background:rgba(10,20,25,.55);display:grid;place-items:center;padding:16px;z-index:10}
+.modal .card{background:var(--surface);border-radius:8px;padding:20px;max-width:560px;width:100%;display:grid;gap:12px;border:1px solid var(--line)}
+.modal .big{background:#fff;border-radius:4px;padding:16px;display:grid;place-items:center}
+.modal .big svg{width:100%;height:auto}
+.modal h2{font-family:var(--f-display);font-size:20px;margin:0;font-weight:600}
+.toast{position:fixed;bottom:calc(16px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:8px 14px;border-radius:4px;font-size:13px;z-index:20}
+.confirm{color:var(--bad)!important;font-weight:600}
+
+body{background:linear-gradient(160deg,var(--bg) 0%,var(--bg-2) 100%) fixed;background-color:var(--bg)}
+header.top{background:linear-gradient(120deg,var(--band),var(--band-2));color:var(--band-ink);border:0;border-radius:10px;padding:18px 20px;box-shadow:0 6px 18px rgba(15,92,110,.18)}
+header.top .eyebrow,header.top .sub,header.top .docmeta{color:var(--band-muted)}
+header.top .sub b{color:var(--band-ink)}
+.kpi{box-shadow:0 1px 3px rgba(15,60,70,.08)}
+.kpi[data-f="ok"]{background:linear-gradient(var(--ok-soft),var(--surface) 70%)}
+.kpi[data-f="warn"]{background:linear-gradient(var(--warn-soft),var(--surface) 70%)}
+.kpi[data-f="bad"]{background:linear-gradient(var(--bad-soft),var(--surface) 70%)}
+.tabs{border-bottom-color:var(--line)}
+.btn.xls{background:var(--xls);border-color:var(--xls);color:#fff}
+.btn.pdf{background:var(--pdf);border-color:var(--pdf);color:#fff}
+.btn.xls:hover,.btn.pdf:hover{filter:brightness(1.08)}
+.sheet{box-shadow:0 2px 10px rgba(15,60,70,.08)}
+thead th{background:var(--accent-soft);color:var(--fg)}
+.signin{background:var(--warn-soft);border:1px solid var(--warn);color:var(--fg);border-radius:8px;padding:12px 14px;font-size:14px}
+@media (prefers-reduced-motion:no-preference){tbody tr{transition:background .15s}}
+@media (max-width:640px){.docmeta{text-align:left}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div>
+      <div class="eyebrow">Kardex · Área de Microbiología</div>
+      <h1>Registro de salida de materiales de Microbiología</h1>
+      <p class="sub">A cargo del supervisor <b>Jorge Parraguez</b></p>
+    </div>
+    <div class="docmeta">
+      <span id="today"></span>
+      <span class="conn" id="conn"><i></i><span>Conectando…</span></span>
+    </div>
+  </header>
+
+  <div class="signin" id="signin" hidden><b>Falta conectar la base de datos.</b> Abre el archivo index.html, pega la configuración de Firebase en el bloque “CONFIGURACIÓN DE FIREBASE” y vuelve a subirlo a GitHub.</div>
+
+  <section class="strip" aria-label="Semáforo de registros">
+    <button class="kpi" data-f="all" aria-pressed="true"><span class="lbl">Registros</span><span class="val" id="k-all">0</span></button>
+    <button class="kpi" data-f="ok" aria-pressed="false"><span class="lbl"><span class="dot ok"></span>Completos</span><span class="val" id="k-ok">0</span></button>
+    <button class="kpi" data-f="warn" aria-pressed="false"><span class="lbl"><span class="dot warn"></span>Datos pendientes</span><span class="val" id="k-warn">0</span></button>
+    <button class="kpi" data-f="bad" aria-pressed="false"><span class="lbl"><span class="dot bad"></span>Sin código SAP</span><span class="val" id="k-bad">0</span></button>
+    <div class="kpi" style="cursor:default"><span class="lbl">Unidades retiradas hoy</span><span class="val" id="k-today">0</span></div>
+  </section>
+
+  <nav class="tabs" role="tablist">
+    <button class="tab" role="tab" id="tab-reg" aria-selected="true">Registro de salidas</button>
+    <button class="tab" role="tab" id="tab-prod" aria-selected="false">Productos (semáforo de consumo)</button>
+  </nav>
+
+  <!-- REGISTRO -->
+  <section id="view-reg" style="display:grid;gap:12px">
+    <div class="toolbar">
+      <div class="field"><label for="f-q">Buscar</label><input id="f-q" type="search" placeholder="Producto, código, lote…" style="width:220px"></div>
+      <div class="field"><label for="f-from">Desde</label><input id="f-from" type="date"></div>
+      <div class="field"><label for="f-to">Hasta</label><input id="f-to" type="date"></div>
+      <div class="field"><label for="f-per">Persona</label><select id="f-per"><option value="">Todo el personal</option></select></div>
+      <button class="btn" id="b-hoy">Hoy</button>
+      <button class="btn" id="b-clear">Limpiar filtros</button>
+      <span class="spacer"></span>
+      <button class="btn" id="b-add">+ Agregar 10 líneas</button>
+      <button class="btn" id="b-imp" title="Cargar un respaldo .json de registros">Importar respaldo</button><input type="file" id="f-imp" accept=".json,application/json" hidden>
+      <button class="btn" id="b-print">Imprimir registro</button>
+      <button class="btn" id="b-labels">Imprimir etiquetas</button>
+      <button class="btn pdf" id="b-pdf">Descargar PDF</button>
+      <button class="btn xls" id="b-xls">Descargar Excel</button>
+    </div>
+    <div class="legend">
+      <span><span class="dot ok"></span>Completo: producto, código SAP, lote, cantidad, fecha y persona</span>
+      <span><span class="dot warn"></span>Falta lote, cantidad o persona</span>
+      <span><span class="dot bad"></span>Producto sin código SAP en el catálogo</span>
+      <span>El código de barras une código SAP + lote, sin espacios ni separadores · toca el código para ampliarlo</span>
+    </div>
+    <div class="sheet">
+      <table id="grid">
+        <thead><tr>
+          <th class="c-st" title="Semáforo">●</th><th class="num">N°</th><th class="c-fecha">Fecha de salida</th>
+          <th class="c-desc">Descripción del material</th><th class="c-sap">Código SAP</th><th class="c-lote">Lote</th>
+          <th class="c-cant">Cant.</th><th class="c-per">Persona que retira</th><th class="c-bc">Código de barras (SAP + Lote)</th>
+          <th class="c-obs">Observación</th><th class="c-act"></th>
+        </tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+    <p class="hint">Escribe parte del nombre o el código SAP en “Descripción” y elige de la lista. Cada línea se guarda sola al salir de la celda y la ve todo el equipo que abra esta página.</p>
+  </section>
+
+  <!-- PRODUCTOS -->
+  <section id="view-prod" hidden style="display:grid;gap:12px">
+    <div class="toolbar">
+      <div class="field"><label for="p-q">Buscar producto</label><input id="p-q" type="search" placeholder="Nombre o código SAP" style="width:240px"></div>
+      <div class="field"><label for="p-mid">Consumo medio desde</label><input id="p-mid" type="number" min="1" value="5" style="width:90px"></div>
+      <div class="field"><label for="p-hi">Consumo alto desde</label><input id="p-hi" type="number" min="1" value="10" style="width:90px"></div>
+      <div class="field"><label for="p-only">Mostrar</label><select id="p-only"><option value="used">Solo con salidas</option><option value="all">Todo el catálogo</option><option value="nosap">Sin código SAP</option></select></div>
+    </div>
+    <p class="hint" id="p-range"></p>
+    <div class="sheet">
+      <table class="prod-table">
+        <thead><tr><th>Semáforo</th><th>Descripción del material</th><th>Código SAP</th><th style="text-align:right">Unidades</th><th style="text-align:right">Salidas</th><th>Última salida</th><th>Último lote</th></tr></thead>
+        <tbody id="prows"></tbody>
+      </table>
+    </div>
+  </section>
+</div>
+
+<datalist id="dl-prod"></datalist>
+<div class="modal" id="modal" hidden>
+  <div class="card" role="dialog" aria-modal="true" aria-labelledby="m-title">
+    <h2 id="m-title"></h2>
+    <div class="hint" id="m-sub"></div>
+    <div class="big" id="m-bc"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap">
+      <button class="btn" id="m-svg">Descargar SVG</button>
+      <button class="btn" id="m-png">Descargar PNG</button>
+      <button class="btn primary" id="m-close">Cerrar</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.6/JsBarcode.all.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script>
+/* ===== CONFIGURACIÓN DE FIREBASE =====
+   Reemplaza este bloque por el "firebaseConfig" que te da Firebase
+   (Configuración del proyecto → Tus apps → App web). */
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyAjqzXrll4uDSg6IPDQZJ1bW-2ecJsza3c",
+  authDomain: "kardex-de-microbiologia.firebaseapp.com",
+  projectId: "kardex-de-microbiologia",
+  storageBucket: "kardex-de-microbiologia.firebasestorage.app",
+  messagingSenderId: "786713774678",
+  appId: "1:786713774678:web:251a60a1a576c996c109f7"
+};
+/* ===================================== */
+const PRODUCTS = [["MICROSCAN ALPHA NAPHTHOL VP2-FRASCO X 30 ML -DADE BEHRING", "600050818"], ["ANAEROCULT P-UNIDAD -MERCK", "600094619"], ["BACTIDENT OXIDASE-FRASCO X 100 -MERCK", "600094648"], ["MICROSCAN 0.5 % NNDIMETHIL ALPHA (NIT 2)-FRASCO X 30 ML -DADE BEHRING", "600045258"], ["MICROSCAN 0.8% SULFANILIC (NIT 1)-FRASCO X 30 ML -DADE BEHRING", "600051626"], ["MICROSCAN 10% FERRIC CHLORIDE (TDA)-FRASCO X 30 ML -DADE BEHRING", "600044483"], ["MICROSCAN 40% POTASSIUM HYDROXIDE (VP 1)-FRASCO X 30 ML -DADE BEHRING", "600047593"], ["MICROSCAN KOVAC`S REAGENT (IND)-FRASCO X 30 ML -DADE BEHRING", "600047712"], ["LAMINILLA-CAJ x 100 UNID-CITOGLAS", "600094084"], ["PLACA PETRI 150 X 20-UNIDAD -SAMPLIX", ""], ["ALCOHOL PURO96º- FCO x 1 LT_ALKHOFAR", "600094613"], ["ALGODÓN HIDROFILO - ROLL x 500 GR - CKF", "600094410"], ["BAJALENGUAS DE MADERA-CAJA X 500 U -DR. SIEGER", "600094691"], ["GALONERA 01 GL/TA-FRASCO -S/MARCA", "600094429"], ["LAMINAS PORTA OBJETOS -CAJA X 50 UNID -SAIL BRAND", "600094794"], ["PIPETA DE TRANSFERENCIA 3ML-PAQUETE X 500", "600094832"], ["TUBOS CONICO NO ESTERIL 15ML -UNIDAD", "600094940"], ["BOLSAS 140 LTS ROJAS IMPRESAS", "600095082"], ["BOLSAS 25 LTS ROJAS IMPRESAS", "600095083"], ["BOLSAS 75 LTS ROJAS IMPRESAS", "600095096"], ["ANAEROCULT C- UNIDAD -MERCK", "600094618"], ["ANTISUERO SHIGU.FLEXNERI POLI.(1,2,3,4,5,6,X,Y)-FCOx3ML-PROB", ""], ["ANTISUERO SHIGUELL SONNEI POLI (ANTI I,II)-FCO X 3 ML-PROBAC", "500019707"], ["ASA DE SIEMBRA 10 uL- UNIDAD- SARSTEDT", "600079131"], ["AMOX./A. CLAVULÁNICO(AMC) 20/10 mcg-DISPx50-EMV", "600094614"], ["ERITROMICINA (EM) 15 mcg-DISPx 50 DISCOS -VALTEK S.A EMV", "600094728"], ["OPTOQUINA (OP) 5 mcg-DISP x 50 DISCOS -VALTEK S.A EMV", "600094836"], ["PENICILINA (P) 10 UOF-DISPENSADOR X 50 DISCOS -VALTEK S.A EMV", "600094845"], ["VANCOMICINA (VA) 30 mcg - DISP X 50 DISCOS -VALTEK S.A EMV", "600094946"], ["MICROSCAN GRAM POSTIVO PANEL TYPE PC42-UNIDAD -DADE BEHRING", "600071219"], ["INDICADOR UNIVERSAL PH 0-14-CAJA. X 100 TEST -MERCK", "600049369"], ["BISTURI NRO 20 -CAJA X 100 -HECOS", "600094411"], ["CLORANFENICOL 30 mcg - DISP x 50 DISCOS - VALTEK S.A EMV", "600094676"], ["CONTROL POSITIVO P/AGLUTINACIONES - FCO X 2 ML", "600094878"], ["CONTROL NEGATIVO P/AGLUTINACIONES - FCO X 1 ML", "600094877"], ["HISOPOS ESTERIL - UNID-CITOSWAB", "600094436"], ["SOL DECOLORANTE PARA BK - FCO X 250 ML - SIN MARCA", "600094889"], ["CRIOVIAL 2ML ESTERIL DE PROPILENO-PQTx 100 UNID-SAMPLIX", "600094707"], ["prov.S-FASTENERS METALICO 10509-2N-CAJA X 50 JGOS", ""], ["PAPEL FILTRO - PLIEGO - SIN MARCA", "600094830"], ["ANTISUERO SALMONELLA POLYVALENT O,Vi,H- FCOx3 ML- PROBAC", "600094636"], ["MICROSCAN PEP PEPTIDASA - FCO X 30 ML -DADE BEHRING", "600048191"], ["SULFATRIMETOPRIM - DISPx 50 DISCOS -VALTEK S.A EMV", "600094899"], ["CIPROFLOXACINO - DISPx 50 DISCOS -VALTEK S.A EMV", "600094672"], ["TETRACICLINA - DISPx 50 DISCOS -VALTEK S.A EMV", "600094910"], ["FOCO HALOGENO 6Vx30W PARA MICROSCOPIO -UNIDAD - PHILIP", ""], ["ASA DE SIEMBRA 1uL-UNIDAD-", "600094640"], ["JERINGA DESECHABLE 5ML/CC 21 X1 1/2\"-UNIDAD - NIPRO", "600094443"], ["ASA DE SIEMBRA DE MICRON- UNIDAD- SIN MARCA", "600094642"], ["JERINGA TUBERCULINDESECHABLE 1ML/CC CON AGUJA-UNIDAD - NIPRO", "600094418"], ["S-ENCENDEDOR PARA COCINA-UNIDAD", ""], ["S-TINTA PARA TAMPON / NEGRO - FCO- ARTESCO", ""], ["FRASCOS PLASTICO AMBAR 250 ML TAPA/ CONTRATAPA- UNID-S/MARCA", "600094795"], ["ASA DE SIEMBRA 1uL-UNIDAD-GREINER", "600094641"], ["MGIT MYCOPRED DIGESTION/DECONTAMINATION -FCO-BD", "600046697"], ["MGIT CULTIVO BACTEC GROWTH INDICADOR TUBE 7mL- UNID-BD", "600048495"], ["LOWENSTEIN JENSEN MEDIUM SLANT 20 x 148 MM - TUBO - BD", "600072759"], ["SIMPLE 2A-B DIFF TOXIN DIFICILE - Kit x 20 TEST - OPERON", "600094887"], ["ESPONJA DE FIBRA VERDE- Unidad", ""], ["AZITROMICINA 15gr - DISPx 50 DISCOS -VALTEK S.A EMV", "600094645"], ["CEFOTAXIMA 30 gr - DISPx 50 DISCOS -VALTEK S.A EMV", "600094664"], ["TIPS PUNTA AZUL 50-1000 UL -BOLSA X 500 U - CITOTES", "600094920"], ["GUANTES DE LATEX TALLA XS -CAJA X 100_ALKHOFAR", "600094756"], ["GUANTES DE LATEX TALLA S -CAJA X 100_ALKHOFAR", "600094755"], ["GUANTES DE LATEX TALLA M -CAJA X 100", "600094754"], ["PILAS PARA TIMER LR44 - UNIDAD - MAXELL", ""], ["GORRO DE ENFERMERA-CAJAx 100 - HMK", "600094711"], ["ETIQUETAS COD DE BARRA 55mm X 30mm 1SAL 1\" BLTT ( 2000 )", "600094736"], ["RIBBON ZEBRA-termotransferencia 110x74m cera negra - Antalis", "600094904"], ["TUBOS CONICO ESTERIL 15 ML BOLSA X 100 UND -", "600094941"], ["DETERGENTE X 730 GR.", ""], ["BOLSA DE BIOSEGURIDAD AUTOCLAVABLE-UNIDAD-MANTA", "600094658"], ["PIPETA ESTERIL DE TRANSFERENCIA 3ML-PAQUETE X 100", "600094743"], ["AGUA BIDESTILADA EN AMPOLLAS 5ML-UNIDAD", "600094773"], ["prov.S-PILAS DELGADAS \"AAA\" #2400 x4 und", ""], ["ACETONA QUITA ESMALTE- FCOx120 ML-ERZA", "600094765"], ["TUBO CONICO ESTERIL C/TAPA 50 ML,BOLSA X25 UND - FISHER", "600094932"], ["TUBO PLAST NO ESTERIL 5 ML 12x75mm-BOLSA X 250 UNID-CITOTEST", "600094934"], ["CRISTAL VIOLETA PARA GRAM FCO X 1 LOT", "600094081"], ["ANTIGENO FEBRIL TIFICO H (AG.FLAGELAR) -FCO X 5ML-CDI", "600094629"], ["ANTIGENO FEBRIL TIFICO O (AG SOMATICO) -FCOX5 ML-CDI", "600094630"], ["ANTIGENO FEBRIL PARATIFICO A (AG FLAGELAR)-FCOX5 ML-CDI", "600094627"], ["ANTIGENO FEBRIL PARATIFICO B(AG FLAGELAR)-FCOX5 ML-CID", "600094628"], ["ANTIGENO FEBRIL B. ABORTUS - FCO X 5 ML- CDI", "600094626"], ["CINTA P/EMBALAJE #770 2\"X 110 YDS.TRANSPARENTE", ""], ["ALCOHOL PURO70º- FCO x 1 LT_ALKHOFAR", "600094612"], ["DESCARTADOR 10.5X8X18 CM ROJO X 1 LITRO UNIDAD - AMARANTHA", "600094716"], ["DESCARTADOR ROJO 7 LITROS UNIDAD - TIPO BALDE- BIOSEG", "600094717"], ["INOCULADOR-D - BOLSA X 12 UND B1013-4", "600050505"], ["prov.S-BOLIGRAFO P/FINA AZUL", ""], ["FUCSINA FENICADA X250 ML L&D", "600094950"], ["PPx Combur 10 M (Urine Testing)", ""], ["AGAR CROMO ORIENTACION (UTIC) 10, 9 CMS-BIPLACA", "600094494"], ["FICHA DE TRAB BK DIRECTO PP-MI-FO31 BLOCK X 50 HOJAS", "600095047"], ["FICHA DE TRAB COPRO FUNCIONAL PP-MI-FO30 BLOCK X 50 HOJAS", "600095048"], ["FICHA DE TRAB EX DIREC Y PBA RAP PP-MI-FO29 BLOCK X 50 HOJAS", "600095049"], ["MASCARILLAS MASQU X 50 UND DELTAPLUS", "600094818"], ["SAFRANINA X 1L (COLORANTE GRAM)", "600094952"], ["MASCARILLAS RESPIRADORA N95 HONEYWELL", "600094820"], ["MASCARILLAS QUIRURGICAS _ CAJA X 50 UND", "600094819"], ["AGAR SANGRE/CHOCOLATE- 2 DIVISIONES", "600094502"], ["CALDO SELENITO CISTINA", "600094659"], ["AGAR MAC CONKEY_PLACA ENTERA", "600094495"], ["AGAR SS", "600094503"], ["AGAR SABOURAUD DEXTR - CAF", "600094500"], ["AGAR SABORAUD DEXTR.TUBO", "600094498"], ["AGAR MUELLER HINTON + SANGRE DE CORDERO_CJA X 10 UND X 9 CM", "600094497"], ["CALDO TRIPTICASA DE SOYA", "600094660"], ["MEDIO MIO", "600094821"], ["MEDIO TSI", "600094822"], ["AGAR CROMO CANDIDA", "600094493"], ["AGAR SANGRE CORDERO SOYA TRIPTICASA", "600094501"], ["MASCARILLA P/TUBERCULOSIS_MICROBIOLOGIA", ""], ["BATA DE CIRUJANO DESCARTABLE-PTE - X 1 UNID. -", "600094651"], ["TUBO PLASTIC POLIESTIRENO S/T-13X75-BLSAx500 UND RUNLAB", "600094936"], ["AGAR MANITOL SAL_CJA X 10 UND X 9 CM", "600094496"], ["TIPS CON FILTRO 1 000 UL XL CAJA X96 UNID- RENONLB ELONGADOS", ""], ["COMBO DE ROTAVIRUS Y ADENOVIRUS - CASSETE_OPERON", "600094695"], ["BOLSA BIOSEGURIDAD (ENVIO DE MX) PQTEx100 UNID_SYNLAB", "600094656"], ["TIPS P.AMARILLA 0-200UL-BOLx 1000 UND - CITOTEST", "600094917"], ["ENGRAPADOR C/ SACAGRAPAS MODELO M526 ARTESCO", ""], ["PRUEBA RAPIDA DETECCION DE SANGRE HUMANA EN HECES", "600094875"], ["PAÑOS ABSORVENTE X 12 UND_VIRUTEX", ""], ["ACEITE DE INMERSION -FCO X 100 ML_BIOPACK", "600094764"], ["LIQUICHEK URINALYSIS CONTROL - BR 435", "600048848"], ["LUGOL GRAM X 1000 ML MARCA: DIAGTEST PERU", "600094804"], ["AZUL DE METILENO X 1000 ML MARCA: DIAGTEST PERU", "600094943"], ["MICROSCAN PANEL RYID - LEVADURAS_20 PBAS", "600045694"], ["MICROSCAN PANEL MICROSTREP PLUS 2_20 PBAS", "600094826"], ["MICROSCAN MH BROTH X 1 TUBO", "600050366"], ["MICROSCAN TRAY LIDS x 240 TAPAS", "600049522"], ["MICROSCAN THERNAL BAR CODE LABEL", "600051511"], ["MINERAL OIL _250 ml", "600045411"], ["HIDROXIDO DE SODIO_30ml", "600047086"], ["MICROSCAN PANEL 94_SITEMICO_X 20 PBAS", "600094825"], ["MICROSCAN PROMPT INOCULATION SYSTEM-D", "600051343"], ["MICROSCAN PANEL NEG MIC 61 x 20 PRUEBAS", "600094827"], ["TIPS CON FILTRO 200 UL - RACK X 96 UND", "600094915"], ["CINTA AISLANTE TEMFLEX_AZUL_ 1UND", ""], ["CINTA AISLANTE TEMFLEX_ROJO_ 1UND", ""], ["AGAR SABOURAUD DETRX. 90 MM X UND", "600094499"], ["COBAS U CUVETTE X 400 PC", "600089451"], ["DEPROTEINIZER X 125 ML", "600089390"], ["COBAS U PACK X 400 STRIPS", "600089450"], ["TUBO DE PLASTICO DE PS 16 X 100 BOLSA X 200", "600094933"], ["JERINGA TUBERCULINDESECHABLE 1ML/CC CON AGUJA-UNIDAD", ""], ["PPx Colorimetry (Urine Testing)", ""], ["FILTRO P/CAMP. ESTERIL 47 mm,0.45um X UND", "600094791"], ["MICROSCAN URINE COMBO PANEL 97", "600068413"], ["CNTROL POSITIVO - KIT X 30DIAS - HB&L", "600094690"], ["CNTROL EXT MICROBIOLOGÍA LAB - KIT X 1 CEPA - PROASECAL", "600095033"], ["CNTROL EXT PARASITOLOGÍA LAB - KIT X 1 VIAL- PROASECAL", "600095034"], ["AGAR TCBS - 10T - VALTEK M", "600095090"], ["FICHA DE TRAB PARASITOLOGIA PP-MI-FO32 BLOCK X 50 HOJAS", "600095050"], ["BIOTARRO DE PLASTICO /1 LITRO", "600094912"]];
+const PERSONAL = ["Gladys Denisse Victorio Gonzales","Hilda García Castañeda","Jhon Kley Cayetano Valencia","Alondra Martina Saccsa Rojas","Alicia Estefany Falcón Huaman","Sofía Asipali Andoa","Richie Ray Valencia Ordoñez","Yajaira Ortiz Nuñez","Eduardo Carlos","Leydi Lisbet Gonzales Enriquez","Jessica Patricia Gonzales Quispe","Pierina Rosario Pérez Hinostroza","Mercedes Esperanza Díaz Castillo","Nataly Aguilar Rojas"];
+const BY_DESC = new Map(PRODUCTS.map(p=>[p[0],p[1]]));
+const BY_SAP = new Map(PRODUCTS.filter(p=>p[1]).map(p=>[p[1],p[0]]));
+const COLL = "salidas";
+const $ = s=>document.querySelector(s);
+const esc = s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const todayISO = ()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
+const fmtDate = iso=>iso? iso.split("-").reverse().join("/") : "";
+
+let db=null, coll=null;
+const rows = new Map();       // id -> data (saved)
+const blanks = [];            // ids of blank lines (unsaved)
+let kpiFilter="all";
+let localSeq=0;
+
+// --- static lists
+$("#dl-prod").innerHTML = PRODUCTS.map(p=>`<option value="${esc(p[0])}">${p[1]?esc(p[1]):"sin código SAP"}</option>`).join("");
+$("#f-per").insertAdjacentHTML("beforeend", PERSONAL.map(n=>`<option>${esc(n)}</option>`).join(""));
+$("#today").textContent = "Hoy: " + new Date().toLocaleDateString("es-PE",{weekday:"long",day:"2-digit",month:"long",year:"numeric"});
+
+function status(d){
+  if(!d || !d.desc) return "none";
+  if(!d.sap) return "bad";
+  if(d.lote && d.persona && d.fecha && Number(d.cant)>0) return "ok";
+  return "warn";
+}
+function bcValue(d){ const l=String(d.lote||"").replace(/[\s\/\\|]+/g,""); return (d.sap && l) ? `${d.sap}${l}` : ""; }
+
+function newId(){ return coll ? coll.doc().id : ("local"+Date.now().toString(36)+(localSeq++)); }
+
+function rowHTML(id){
+  const perOpts = `<option value="">— Seleccionar —</option>` + PERSONAL.map(n=>`<option>${esc(n)}</option>`).join("");
+  return `<td class="c-st"><span class="dot none"></span></td>
+  <td class="num"></td>
+  <td class="c-fecha"><input type="date" data-k="fecha" id="fe-${id}" aria-label="Fecha de salida"></td>
+  <td class="c-desc"><input list="dl-prod" data-k="desc" id="de-${id}" placeholder="Escribe producto o código SAP…" aria-label="Descripción del material" autocomplete="off"></td>
+  <td class="c-sap"><span class="sap"></span></td>
+  <td class="c-lote"><input data-k="lote" id="lo-${id}" placeholder="Lote" aria-label="Lote"></td>
+  <td class="c-cant"><input type="number" min="0" step="1" data-k="cant" id="ca-${id}" aria-label="Cantidad"></td>
+  <td class="c-per"><select data-k="persona" id="pe-${id}" aria-label="Persona que retira">${perOpts}</select></td>
+  <td class="c-bc"></td>
+  <td class="c-obs"><input data-k="obs" id="ob-${id}" placeholder="Observación" aria-label="Observación"></td>
+  <td class="c-act"><button class="btn ghost" data-del title="Eliminar línea" aria-label="Eliminar línea">✕</button></td>`;
+}
+
+function makeRow(id, blank){
+  const tr=document.createElement("tr");
+  tr.dataset.id=id; if(blank) tr.classList.add("blank");
+  tr.innerHTML=rowHTML(id);
+  return tr;
+}
+
+function paintRow(tr, d){
+  const st=status(d);
+  tr.classList.remove("s-ok","s-warn","s-bad");
+  if(st!=="none") tr.classList.add("s-"+st);
+  tr.querySelector(".c-st .dot").className="dot "+st;
+  tr.querySelector(".c-st").title={ok:"Completo",warn:"Faltan datos",bad:"Sin código SAP",none:""}[st];
+  const act=document.activeElement;
+  tr.querySelectorAll("[data-k]").forEach(el=>{
+    if(el===act) return;
+    const v=d?.[el.dataset.k] ?? "";
+    if(el.value!==String(v)) el.value=v;
+  });
+  const sap=tr.querySelector(".sap");
+  if(d?.desc && !d.sap){ sap.textContent="Sin código"; sap.className="sap missing"; }
+  else { sap.textContent=d?.sap||""; sap.className="sap"; }
+  const cell=tr.querySelector(".c-bc"); const v=d?bcValue(d):"";
+  if(cell.dataset.v!==v){
+    cell.dataset.v=v;
+    if(v){
+      cell.innerHTML=`<span class="bc" role="button" tabindex="0" title="Ampliar código de barras"><svg></svg></span>`;
+      try{ JsBarcode(cell.querySelector("svg"), v, {format:"CODE128",height:40,width:1.3,fontSize:11,margin:2,font:"monospace",background:"#ffffff",lineColor:"#000000"}); }
+      catch(e){ cell.innerHTML=`<span class="bc-wait">No se pudo generar</span>`; }
+    } else if(d?.desc){
+      cell.innerHTML=`<span class="bc-wait">${d.sap?"Falta lote":"Requiere código SAP"}</span>`;
+    } else cell.innerHTML="";
+  }
+}
+
+const tbody=$("#rows");
+function sortedIds(){
+  return [...rows.keys()].sort((a,b)=>(rows.get(a).createdAt||0)-(rows.get(b).createdAt||0));
+}
+function layout(){
+  // saved rows in creation order, then blanks
+  const order=[...sortedIds(), ...blanks];
+  const oset=new Set(order);
+  const existing=new Map([...tbody.children].map(tr=>[tr.dataset.id,tr]));
+  existing.forEach((tr,id)=>{ if(!oset.has(id)) tr.remove(); });
+  let prev=null;
+  order.forEach(id=>{
+    let tr=existing.get(id);
+    if(!tr){ tr=makeRow(id, !rows.has(id)); }
+    if(rows.has(id)) tr.classList.remove("blank");
+    const want = prev ? prev.nextSibling : tbody.firstChild;
+    if(tr!==want) tbody.insertBefore(tr, want);
+    paintRow(tr, rows.get(id));
+    prev=tr;
+  });
+  applyFilters();
+}
+
+function ensureBlanks(n){ while(blanks.length<n) blanks.push(newId()); }
+
+function matchesFilters(d){
+  const q=$("#f-q").value.trim().toLowerCase();
+  const from=$("#f-from").value, to=$("#f-to").value, per=$("#f-per").value;
+  if(q && ![d.desc,d.sap,d.lote,d.obs,d.persona].join(" ").toLowerCase().includes(q)) return false;
+  if(from && (!d.fecha || d.fecha<from)) return false;
+  if(to && (!d.fecha || d.fecha>to)) return false;
+  if(per && d.persona!==per) return false;
+  return true;
+}
+function filteredRows(){ return sortedIds().map(id=>[id,rows.get(id)]).filter(([,d])=>matchesFilters(d)); }
+
+function applyFilters(){
+  const vis=filteredRows();
+  const visSet=new Set(vis.map(v=>v[0]));
+  const c={all:0,ok:0,warn:0,bad:0};
+  vis.forEach(([,d])=>{ c.all++; const s=status(d); if(c[s]!=null) c[s]++; });
+  const idx=new Map(sortedIds().map((id,i)=>[id,i+1]));
+  [...tbody.children].forEach(tr=>{
+    const id=tr.dataset.id;
+    if(!rows.has(id)){ tr.hidden = kpiFilter!=="all"; tr.querySelector(".num").textContent=""; return; }
+    const show = visSet.has(id) && (kpiFilter==="all" || status(rows.get(id))===kpiFilter);
+    tr.hidden=!show;
+    tr.querySelector(".num").textContent = idx.get(id);
+  });
+  $("#k-all").textContent=c.all; $("#k-ok").textContent=c.ok; $("#k-warn").textContent=c.warn; $("#k-bad").textContent=c.bad;
+  const t=todayISO(); let u=0; rows.forEach(d=>{ if(d.fecha===t) u+=Number(d.cant)||0; });
+  $("#k-today").textContent=u;
+  renderProducts();
+}
+
+// --- saving
+const pending=new Map(); // id -> Promise chain
+function save(id, patch){
+  const prevData=rows.get(id);
+  const isNew=!prevData;
+  const base = isNew ? {fecha:todayISO(), desc:"", sap:"", lote:"", cant:1, persona:"", obs:"", createdAt:Date.now()} : {...prevData};
+  const data={...base, ...patch, updatedAt:Date.now()};
+  rows.set(id,data);
+  if(isNew){ const i=blanks.indexOf(id); if(i>=0) blanks.splice(i,1); blanks.push(newId()); }
+  layout();
+  if(!coll) return;
+  const chain=(pending.get(id)||Promise.resolve()).then(()=>coll.doc(id).set(data)).catch(e=>{
+    toast(e?.code==="permission-denied" ? "Firebase no permite guardar: revisa las reglas de Firestore." : e?.code==="resource-exhausted" ? "Se alcanzó el límite diario gratuito de Firebase." : "No se pudo guardar. Revisa tu conexión.");
+  });
+  pending.set(id,chain);
+}
+
+tbody.addEventListener("change", e=>{
+  const el=e.target; const k=el.dataset.k; if(!k) return;
+  const id=el.closest("tr").dataset.id;
+  let v=el.value;
+  const patch={};
+  if(k==="desc"){
+    v=v.trim();
+    if(BY_DESC.has(v)){ patch.desc=v; patch.sap=BY_DESC.get(v); }
+    else if(BY_SAP.has(v)){ patch.desc=BY_SAP.get(v); patch.sap=v; }
+    else {
+      const hit=PRODUCTS.find(p=>p[0].toLowerCase()===v.toLowerCase());
+      if(hit){ patch.desc=hit[0]; patch.sap=hit[1]; }
+      else if(v===""){ patch.desc=""; patch.sap=""; }
+      else { toast("Elige el producto de la lista desplegable."); el.value=rows.get(id)?.desc||""; return; }
+    }
+  } else if(k==="cant"){ patch.cant = v===""? "" : Math.max(0, Number(v)); }
+  else if(k==="lote"){ patch.lote=v.trim().toUpperCase(); }
+  else patch[k]=v;
+  if(!rows.has(id) && Object.values(patch).every(x=>x===""||x==null)) return;
+  save(id,patch);
+});
+
+tbody.addEventListener("click", e=>{
+  const del=e.target.closest("[data-del]");
+  if(del){
+    const tr=del.closest("tr"); const id=tr.dataset.id;
+    if(!rows.has(id)){ return; }
+    if(!del.classList.contains("confirm")){ del.classList.add("confirm"); del.textContent="¿Borrar?"; setTimeout(()=>{del.classList.remove("confirm");del.textContent="✕";},3000); return; }
+    rows.delete(id); layout();
+    if(coll) coll.doc(id).delete().catch(()=>toast("No se pudo eliminar."));
+    toast("Línea eliminada");
+    return;
+  }
+  const bc=e.target.closest(".bc"); if(bc) openModal(bc.closest("tr").dataset.id);
+});
+tbody.addEventListener("keydown", e=>{ if((e.key==="Enter"||e.key===" ") && e.target.classList.contains("bc")){ e.preventDefault(); openModal(e.target.closest("tr").dataset.id);} });
+
+// --- filters & kpis
+["#f-q","#f-from","#f-to","#f-per"].forEach(s=>$(s).addEventListener("input",applyFilters));
+$("#b-hoy").onclick=()=>{ $("#f-from").value=todayISO(); $("#f-to").value=todayISO(); applyFilters(); };
+$("#b-clear").onclick=()=>{ ["#f-q","#f-from","#f-to","#f-per"].forEach(s=>$(s).value=""); setKpi("all"); };
+$("#b-add").onclick=()=>{ for(let i=0;i<10;i++) blanks.push(newId()); layout(); };
+function setKpi(f){ kpiFilter=f; document.querySelectorAll(".kpi[data-f]").forEach(b=>b.setAttribute("aria-pressed", b.dataset.f===f)); applyFilters(); }
+document.querySelectorAll(".kpi[data-f]").forEach(b=>b.onclick=()=>setKpi(b.dataset.f===kpiFilter ? "all" : b.dataset.f));
+
+// --- tabs
+function setTab(t){
+  $("#tab-reg").setAttribute("aria-selected", t==="reg"); $("#tab-prod").setAttribute("aria-selected", t==="prod");
+  $("#view-reg").hidden = t!=="reg"; $("#view-prod").hidden = t!=="prod";
+  if(t==="prod") renderProducts();
+}
+$("#tab-reg").onclick=()=>setTab("reg"); $("#tab-prod").onclick=()=>setTab("prod");
+
+// --- productos
+["#p-q","#p-mid","#p-hi","#p-only"].forEach(s=>$(s).addEventListener("input",renderProducts));
+function renderProducts(){
+  if($("#view-prod").hidden) return;
+  const mid=Number($("#p-mid").value)||5, hi=Math.max(Number($("#p-hi").value)||10, mid+1);
+  const agg=new Map();
+  filteredRows().forEach(([,d])=>{
+    if(!d.desc) return;
+    const a=agg.get(d.desc)||{u:0,n:0,last:"",lote:""};
+    a.u+=Number(d.cant)||0; a.n++;
+    if((d.fecha||"")>=a.last){ a.last=d.fecha||""; a.lote=d.lote||a.lote; }
+    agg.set(d.desc,a);
+  });
+  const q=$("#p-q").value.trim().toLowerCase(), only=$("#p-only").value;
+  let list=PRODUCTS.map(([desc,sap])=>({desc,sap,...(agg.get(desc)||{u:0,n:0,last:"",lote:""})}));
+  if(only==="used") list=list.filter(p=>p.n>0);
+  if(only==="nosap") list=list.filter(p=>!p.sap);
+  if(q) list=list.filter(p=>(p.desc+" "+p.sap).toLowerCase().includes(q));
+  list.sort((a,b)=>b.u-a.u || a.desc.localeCompare(b.desc));
+  const from=$("#f-from").value, to=$("#f-to").value;
+  $("#p-range").textContent = "Consumo calculado sobre las salidas del registro" + (from||to ? ` entre ${fmtDate(from)||"el inicio"} y ${fmtDate(to)||"hoy"}` : " (todas las fechas)") + ". Los filtros de fecha y persona de la pestaña Registro también aplican aquí.";
+  const pill=p=>{
+    if(!p.sap) return `<span class="pill bad"><span class="dot bad"></span>Sin código SAP</span>`;
+    if(p.u>=hi) return `<span class="pill bad"><span class="dot bad"></span>Consumo alto</span>`;
+    if(p.u>=mid) return `<span class="pill warn"><span class="dot warn"></span>Consumo medio</span>`;
+    if(p.u>0) return `<span class="pill ok"><span class="dot ok"></span>Consumo bajo</span>`;
+    return `<span class="pill none"><span class="dot none"></span>Sin salidas</span>`;
+  };
+  $("#prows").innerHTML = list.length ? list.map(p=>`<tr><td>${pill(p)}</td><td>${esc(p.desc)}</td><td class="sap">${esc(p.sap)||'<span class="sap missing">—</span>'}</td><td class="qty">${p.u}</td><td style="text-align:right;font-variant-numeric:tabular-nums">${p.n}</td><td>${fmtDate(p.last)}</td><td class="sap">${esc(p.lote)}</td></tr>`).join("")
+    : `<tr><td colspan="7" class="empty">Aún no hay salidas que coincidan. Registra la primera en la pestaña “Registro de salidas”.</td></tr>`;
+}
+
+// --- modal
+let mId=null;
+function openModal(id){
+  const d=rows.get(id); if(!d) return; mId=id;
+  $("#m-title").textContent=d.desc;
+  $("#m-sub").textContent=`SAP ${d.sap} · Lote ${d.lote} · ${fmtDate(d.fecha)} · ${d.persona||"sin persona"}`;
+  $("#m-bc").innerHTML="<svg></svg>";
+  JsBarcode($("#m-bc svg"), bcValue(d), {format:"CODE128",height:90,width:2.2,fontSize:16,margin:10,background:"#ffffff",lineColor:"#000000"});
+  $("#modal").hidden=false; $("#m-close").focus();
+}
+$("#m-close").onclick=()=>{$("#modal").hidden=true;};
+$("#modal").addEventListener("click",e=>{ if(e.target.id==="modal") $("#modal").hidden=true; });
+document.addEventListener("keydown",e=>{ if(e.key==="Escape") $("#modal").hidden=true; });
+const fname=d=>`codigo_${d.sap}_${String(d.lote).replace(/[^A-Za-z0-9_-]+/g,"-")}`;
+$("#m-svg").onclick=async()=>{ const d=rows.get(mId); const svg=new XMLSerializer().serializeToString($("#m-bc svg")); await offer(fname(d)+".svg", new Blob([svg],{type:"image/svg+xml"})); };
+$("#m-png").onclick=async()=>{
+  const d=rows.get(mId); const c=document.createElement("canvas");
+  JsBarcode(c, bcValue(d), {format:"CODE128",height:120,width:3,fontSize:22,margin:16,background:"#ffffff",lineColor:"#000000"});
+  c.toBlob(b=>offer(fname(d)+".png", b),"image/png");
+};
+
+// --- downloads
+let dl=null;
+async function offer(filename, data){
+  if(dl){
+    try{ await dl.save({filename, data}); toast("Archivo listo"); return; }
+    catch(e){ if(e?.code==="declined") return; }
+  }
+  try{
+    const blob = data instanceof Blob ? data : new Blob([data]);
+    const u=URL.createObjectURL(blob); const a=document.createElement("a");
+    a.href=u; a.download=filename; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(u),4000); toast("Descargando "+filename);
+  }catch(e){ toast("No se pudo descargar. Inicia sesión en Claude e inténtalo de nuevo."); }
+}
+$("#b-xls").onclick=()=>{
+  const list=filteredRows().filter(([,d])=>kpiFilter==="all"||status(d)===kpiFilter);
+  const lab={ok:"Completo",warn:"Faltan datos",bad:"Sin código SAP",none:""};
+  const aoa=[["REGISTRO DE SALIDA DE MATERIALES DE MICROBIOLOGÍA"],["Supervisor a cargo: Jorge Parraguez"],["Exportado: "+new Date().toLocaleString("es-PE")],[],
+    ["N°","Fecha de salida","Código SAP","Descripción del material","Lote","Cantidad","Persona que retira","Código de barras (SAP+Lote)","Semáforo","Observación"]];
+  list.forEach(([id,d],i)=>aoa.push([i+1, fmtDate(d.fecha), d.sap, d.desc, d.lote, d.cant===""?"":Number(d.cant), d.persona, bcValue(d), lab[status(d)], d.obs]));
+  const ws=XLSX.utils.aoa_to_sheet(aoa);
+  ws["!cols"]=[{wch:5},{wch:12},{wch:12},{wch:60},{wch:14},{wch:9},{wch:34},{wch:26},{wch:16},{wch:40}];
+  ws["!merges"]=[{s:{r:0,c:0},e:{r:0,c:9}},{s:{r:1,c:0},e:{r:1,c:9}}];
+  const cat=XLSX.utils.aoa_to_sheet([["Descripción del material","Código SAP"],...PRODUCTS]); cat["!cols"]=[{wch:70},{wch:14}];
+  const per=XLSX.utils.aoa_to_sheet([["Personal de Microbiología"],...PERSONAL.map(n=>[n])]); per["!cols"]=[{wch:40}];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,"Salidas"); XLSX.utils.book_append_sheet(wb,cat,"Catálogo SAP"); XLSX.utils.book_append_sheet(wb,per,"Personal");
+  const buf=XLSX.write(wb,{bookType:"xlsx",type:"array"});
+  offer(`Salidas Microbiologia ${todayISO()}.xlsx`, new Blob([buf]));
+};
+
+
+function buildPdf(){
+  const J=window.jspdf; if(!J){ toast("No se pudo cargar el generador de PDF."); return null; }
+  const list=filteredRows().filter(([,d])=>kpiFilter==="all"||status(d)===kpiFilter);
+  if(!list.length){ toast("No hay líneas para exportar."); return null; }
+  const doc=new J.jsPDF({orientation:"landscape",unit:"mm",format:"a4"});
+  const W=doc.internal.pageSize.getWidth();
+  doc.setFillColor(15,92,110); doc.rect(0,0,W,22,"F");
+  doc.setTextColor(255,255,255); doc.setFont("helvetica","bold"); doc.setFontSize(14);
+  doc.text("REGISTRO DE SALIDA DE MATERIALES DE MICROBIOLOGÍA",10,10);
+  doc.setFont("helvetica","normal"); doc.setFontSize(9);
+  doc.text("Supervisor a cargo: Jorge Parraguez   ·   Emitido: "+new Date().toLocaleString("es-PE"),10,16);
+  const lab={ok:"Completo",warn:"Faltan datos",bad:"Sin código SAP",none:""};
+  const imgs={};
+  list.forEach(([id,d])=>{ const v=bcValue(d); if(v){ const c=document.createElement("canvas"); try{ JsBarcode(c,v,{format:"CODE128",height:50,width:2,fontSize:14,margin:4,background:"#ffffff",lineColor:"#000000"}); imgs[id]={src:c.toDataURL("image/png"),r:c.width/c.height}; }catch(e){} } });
+  const body=list.map(([id,d],i)=>[i+1,fmtDate(d.fecha),d.sap||"—",d.desc,d.lote,d.cant===""?"":String(d.cant),d.persona,"",lab[status(d)],d.obs||""]);
+  const ids=list.map(x=>x[0]);
+  doc.autoTable({
+    startY:27, head:[["N°","Fecha","Código SAP","Descripción del material","Lote","Cant.","Persona que retira","Código de barras","Estado","Observación"]],
+    body, theme:"grid", styles:{fontSize:7.5,cellPadding:1.6,valign:"middle",minCellHeight:13},
+    headStyles:{fillColor:[220,236,239],textColor:[22,35,43],fontStyle:"bold"},
+    columnStyles:{0:{cellWidth:8,halign:"right"},1:{cellWidth:17},2:{cellWidth:19},3:{cellWidth:62},4:{cellWidth:18},5:{cellWidth:10,halign:"right"},6:{cellWidth:36},7:{cellWidth:44},8:{cellWidth:18},9:{cellWidth:"auto"}},
+    didParseCell:(h)=>{ if(h.section==="body" && h.column.index===8){ const s=status(list[h.row.index][1]); h.cell.styles.textColor= s==="ok"?[31,138,76]: s==="warn"?[160,110,0]: s==="bad"?[194,58,43]:[90,100,110]; h.cell.styles.fontStyle="bold"; } },
+    didDrawCell:(h)=>{ if(h.section==="body" && h.column.index===7){ const im=imgs[ids[h.row.index]]; if(im){ const mh=h.cell.height-2, mw=Math.min(h.cell.width-2, mh*im.r); doc.addImage(im.src,"PNG",h.cell.x+1,h.cell.y+1,mw,mw/im.r); } } },
+    didDrawPage:()=>{ const p=doc.internal.getNumberOfPages(); doc.setFontSize(8); doc.setTextColor(110,120,128); doc.text("Página "+p, W-22, doc.internal.pageSize.getHeight()-6); }
+  });
+  const y=doc.lastAutoTable.finalY+14;
+  if(y < doc.internal.pageSize.getHeight()-12){ doc.setDrawColor(90); doc.line(W-90,y,W-20,y); doc.setFontSize(8); doc.setTextColor(60); doc.text("Jorge Parraguez — Supervisor de Microbiología",W-90,y+4); }
+  return doc;
+}
+$("#b-pdf").onclick=()=>{ const doc=buildPdf(); if(doc) offer(`Salidas Microbiologia ${todayISO()}.pdf`, doc.output("blob")); };
+$("#b-print").onclick=()=>{ const doc=buildPdf(); if(!doc) return; doc.autoPrint(); offer(`Imprimir Salidas Microbiologia ${todayISO()}.pdf`, doc.output("blob")); toast("Abre el PDF: se mostrará la ventana de impresión"); };
+$("#b-labels").onclick=()=>{
+  const J=window.jspdf; if(!J){ toast("No se pudo cargar el generador de PDF."); return; }
+  const list=filteredRows().filter(([,d])=>(kpiFilter==="all"||status(d)===kpiFilter) && bcValue(d));
+  if(!list.length){ toast("No hay líneas con código de barras para imprimir."); return; }
+  const doc=new J.jsPDF({orientation:"portrait",unit:"mm",format:"a4"});
+  const cols=3, rows=8, mx=8, my=10, gw=(210-2*mx)/cols, gh=(297-2*my)/rows;
+  list.forEach(([id,d],i)=>{
+    const k=i%(cols*rows); if(i>0 && k===0) doc.addPage();
+    const x=mx+(k%cols)*gw, y=my+Math.floor(k/cols)*gh;
+    doc.setDrawColor(200); doc.setLineDashPattern([1,1],0); doc.rect(x+1,y+1,gw-2,gh-2); doc.setLineDashPattern([],0);
+    doc.setFontSize(6.5); doc.setTextColor(80); doc.text(fmtDate(d.fecha), x+gw-3, y+6, {align:"right"});
+    doc.setFontSize(7); doc.setTextColor(20); doc.setFont("helvetica","bold");
+    doc.text(doc.splitTextToSize(d.desc, gw-6).slice(0,2), x+3, y+11);
+    doc.setFont("helvetica","normal"); doc.setFontSize(6.5);
+    doc.text(`SAP ${d.sap} · Lote ${d.lote}`, x+3, y+17.5);
+    const c=document.createElement("canvas");
+    JsBarcode(c,bcValue(d),{format:"CODE128",height:60,width:2,fontSize:16,margin:6,background:"#ffffff",lineColor:"#000000"});
+    const r=c.width/c.height, bh=gh-22, bw=Math.min(gw-6,bh*r);
+    doc.addImage(c.toDataURL("image/png"),"PNG",x+(gw-bw)/2,y+19,bw,bw/r);
+  });
+  doc.autoPrint();
+  offer(`Etiquetas Microbiologia ${todayISO()}.pdf`, doc.output("blob"));
+  toast("Abre el PDF: se mostrará la ventana de impresión");
+};
+let tt; function toast(m){ const t=$("#toast"); t.textContent=m; t.hidden=false; clearTimeout(tt); tt=setTimeout(()=>t.hidden=true,2600); }
+function setConn(state,text){ const c=$("#conn"); c.className="conn "+state; c.querySelector("span").textContent=text; }
+
+// --- boot
+ensureBlanks(10); layout();
+(async()=>{
+  if(!window.firebase || !FIREBASE_CONFIG.projectId || FIREBASE_CONFIG.projectId==="PEGA_AQUI"){
+    setConn("off","Base de datos no configurada: los cambios no se guardarán"); $("#signin").hidden=false; return;
+  }
+  try{ firebase.initializeApp(FIREBASE_CONFIG); db=firebase.firestore(); }
+  catch(e){ setConn("off","Error en la configuración de Firebase"); $("#signin").hidden=false; return; }
+  coll=db.collection(COLL);
+  blanks.splice(0); tbody.innerHTML=""; ensureBlanks(10); layout();
+  coll.onSnapshot({includeMetadataChanges:false}, snap=>{
+    snap.docChanges().forEach(ch=>{
+      if(ch.type==="removed") rows.delete(ch.doc.id);
+      else {
+        const id=ch.doc.id;
+        if(ch.doc.metadata.hasPendingWrites && rows.has(id)) return;
+        rows.set(id, ch.doc.data());
+        const bi=blanks.indexOf(id); if(bi>=0) blanks.splice(bi,1);
+      }
+    });
+    layout();
+    setConn("on","Guardado en línea · "+rows.size+" registros");
+  }, err=>{ setConn("off", err?.code==="permission-denied" ? "Sin permiso: revisa las reglas de Firestore" : "Se perdió la conexión; recarga la página"); });
+})();
+
+// --- importar respaldo (.json)
+$("#b-imp").onclick=()=>{ if(!coll){ toast("Primero configura Firebase."); return; } $("#f-imp").click(); };
+$("#f-imp").onchange=async e=>{
+  const f=e.target.files[0]; e.target.value=""; if(!f) return;
+  try{
+    const list=JSON.parse(await f.text());
+    if(!Array.isArray(list)) throw 0;
+    let n=0;
+    for(let k=0;k<list.length;k+=400){
+      const b=db.batch();
+      list.slice(k,k+400).forEach(r=>{ if(r&&r.id&&r.data){ b.set(coll.doc(String(r.id)), r.data); n++; } });
+      await b.commit();
+    }
+    toast(n+" registros importados");
+  }catch(err){ toast("No se pudo importar: el archivo no es un respaldo válido o no hay permiso."); }
+};
+</script>
+
+</body></html>
