@@ -63,7 +63,7 @@ input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid v
 .spacer{flex:1}
 
 .sheet{background:var(--surface);border:1px solid var(--line);border-radius:6px;overflow-x:auto;max-height:72vh;overflow-y:auto}
-table{border-collapse:collapse;width:100%;min-width:1380px}
+table{border-collapse:collapse;width:100%;min-width:1460px}
 thead th{position:sticky;top:0;z-index:2;background:var(--surface-2);font:600 11px var(--f-body);text-transform:uppercase;letter-spacing:.06em;color:var(--muted);text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);white-space:nowrap}
 tbody td{border-bottom:1px solid var(--line);padding:4px 6px;vertical-align:middle}
 tbody tr{border-left:4px solid transparent}
@@ -89,6 +89,10 @@ tbody tr.s-bad:hover{background:var(--bad-soft)}
 .c-bc{width:190px}
 .c-obs{min-width:200px}
 .c-act{width:44px;text-align:center}
+.c-done{width:74px;text-align:center}
+.c-done input{width:20px;height:20px;cursor:pointer;accent-color:var(--ok)}
+tbody tr.done td:not(.c-done):not(.c-act){opacity:.45}
+tbody tr.done td.c-desc input{text-decoration:line-through}
 .bc{display:inline-flex;background:var(--code-bg);border-radius:3px;padding:2px 4px;cursor:zoom-in;border:1px solid var(--line)}
 .bc svg{display:block;height:44px;width:auto;max-width:180px}
 .bc-wait{font-size:12px;color:var(--muted)}
@@ -180,12 +184,13 @@ thead th{background:var(--accent-soft);color:var(--fg)}
       <span><span class="dot ok"></span>Completo: producto, código SAP, lote, cantidad, fecha y persona</span>
       <span><span class="dot warn"></span>Falta lote, cantidad o persona</span>
       <span><span class="dot bad"></span>Producto sin código SAP en el catálogo</span>
+      <span>☑ Desc. SAP: marca lo ya descargado en SAP; esas líneas no salen en Excel, PDF ni etiquetas</span>
       <span>El código de barras une código SAP + lote, sin espacios ni separadores · toca el código para ampliarlo</span>
     </div>
     <div class="sheet">
       <table id="grid">
         <thead><tr>
-          <th class="c-st" title="Semáforo">●</th><th class="num">N°</th><th class="c-fecha">Fecha de salida</th>
+          <th class="c-st" title="Semáforo">●</th><th class="num">N°</th><th class="c-done" title="Marca cuando ya descargaste la salida en SAP">Desc. SAP</th><th class="c-fecha">Fecha de salida</th>
           <th class="c-desc">Descripción del material</th><th class="c-sap">Código SAP</th><th class="c-lote">Lote</th>
           <th class="c-cant">Cant.</th><th class="c-per">Persona que retira</th><th class="c-bc">Código de barras (SAP + Lote)</th>
           <th class="c-obs">Observación</th><th class="c-act"></th>
@@ -283,6 +288,7 @@ function rowHTML(id){
   const perOpts = `<option value="">— Seleccionar —</option>` + PERSONAL.map(n=>`<option>${esc(n)}</option>`).join("");
   return `<td class="c-st"><span class="dot none"></span></td>
   <td class="num"></td>
+  <td class="c-done"><input type="checkbox" data-k="sapOk" id="so-${id}" aria-label="Descargado en SAP"></td>
   <td class="c-fecha"><input type="date" data-k="fecha" id="fe-${id}" aria-label="Fecha de salida"></td>
   <td class="c-desc"><input list="dl-prod" data-k="desc" id="de-${id}" placeholder="Escribe producto o código SAP…" aria-label="Descripción del material" autocomplete="off"></td>
   <td class="c-sap"><span class="sap"></span></td>
@@ -304,12 +310,14 @@ function makeRow(id, blank){
 function paintRow(tr, d){
   const st=status(d);
   tr.classList.remove("s-ok","s-warn","s-bad");
+  tr.classList.toggle("done", !!d?.sapOk);
   if(st!=="none") tr.classList.add("s-"+st);
   tr.querySelector(".c-st .dot").className="dot "+st;
   tr.querySelector(".c-st").title={ok:"Completo",warn:"Faltan datos",bad:"Sin código SAP",none:""}[st];
   const act=document.activeElement;
   tr.querySelectorAll("[data-k]").forEach(el=>{
     if(el===act) return;
+    if(el.type==="checkbox"){ el.checked=!!d?.[el.dataset.k]; el.disabled=!d; return; }
     const v=d?.[el.dataset.k] ?? "";
     if(el.value!==String(v)) el.value=v;
   });
@@ -406,6 +414,7 @@ tbody.addEventListener("change", e=>{
   const id=el.closest("tr").dataset.id;
   let v=el.value;
   const patch={};
+  if(k==="sapOk"){ if(!rows.has(id)) { el.checked=false; return; } save(id,{sapOk:el.checked}); toast(el.checked?"Marcado como descargado en SAP: ya no saldrá en las impresiones":"Desmarcado: volverá a salir en las impresiones"); return; }
   if(k==="desc"){
     v=v.trim();
     if(BY_DESC.has(v)){ patch.desc=v; patch.sap=BY_DESC.get(v); }
@@ -522,7 +531,8 @@ async function offer(filename, data){
   }catch(e){ toast("No se pudo descargar. Inicia sesión en Claude e inténtalo de nuevo."); }
 }
 $("#b-xls").onclick=()=>{
-  const list=filteredRows().filter(([,d])=>kpiFilter==="all"||status(d)===kpiFilter);
+  const list=printRows();
+  if(!list.length){ toast("No hay líneas pendientes de SAP para exportar."); return; }
   const lab={ok:"Completo",warn:"Faltan datos",bad:"Sin código SAP",none:""};
   const aoa=[["REGISTRO DE SALIDA DE MATERIALES DE MICROBIOLOGÍA"],["Supervisor a cargo: Jorge Parraguez"],["Exportado: "+new Date().toLocaleString("es-PE")],[],
     ["N°","Fecha de salida","Código SAP","Descripción del material","Lote","Cantidad","Persona que retira","Código de barras (SAP+Lote)","Semáforo","Observación"]];
@@ -539,10 +549,17 @@ $("#b-xls").onclick=()=>{
 };
 
 
+function printRows(){
+  const all=filteredRows().filter(([,d])=>kpiFilter==="all"||status(d)===kpiFilter);
+  const list=all.filter(([,d])=>!d.sapOk);
+  const skip=all.length-list.length;
+  if(skip) setTimeout(()=>toast(skip+" línea(s) marcadas como descargadas en SAP no se incluyen"),2700);
+  return list;
+}
 function buildPdf(){
   const J=window.jspdf; if(!J){ toast("No se pudo cargar el generador de PDF."); return null; }
-  const list=filteredRows().filter(([,d])=>kpiFilter==="all"||status(d)===kpiFilter);
-  if(!list.length){ toast("No hay líneas para exportar."); return null; }
+  const list=printRows();
+  if(!list.length){ toast("No hay líneas pendientes de SAP para exportar."); return null; }
   const doc=new J.jsPDF({orientation:"landscape",unit:"mm",format:"a4"});
   const W=doc.internal.pageSize.getWidth();
   doc.setFillColor(15,92,110); doc.rect(0,0,W,22,"F");
@@ -572,7 +589,7 @@ $("#b-pdf").onclick=()=>{ const doc=buildPdf(); if(doc) offer(`Salidas Microbiol
 $("#b-print").onclick=()=>{ const doc=buildPdf(); if(!doc) return; doc.autoPrint(); offer(`Imprimir Salidas Microbiologia ${todayISO()}.pdf`, doc.output("blob")); toast("Abre el PDF: se mostrará la ventana de impresión"); };
 $("#b-labels").onclick=()=>{
   const J=window.jspdf; if(!J){ toast("No se pudo cargar el generador de PDF."); return; }
-  const list=filteredRows().filter(([,d])=>(kpiFilter==="all"||status(d)===kpiFilter) && bcValue(d));
+  const list=printRows().filter(([,d])=>bcValue(d));
   if(!list.length){ toast("No hay líneas con código de barras para imprimir."); return; }
   const doc=new J.jsPDF({orientation:"portrait",unit:"mm",format:"a4"});
   const cols=3, rows=8, mx=8, my=10, gw=(210-2*mx)/cols, gh=(297-2*my)/rows;
